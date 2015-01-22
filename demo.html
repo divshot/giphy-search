@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <title>giphy-search Demo</title>
+
+  <script src="../webcomponentsjs/webcomponents.js"></script>
+  <link rel="import" href="giphy-search.html">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body unresolved>
+  <h1>giphy-search</h1>
+
+  <p>Because searching for gifs is important, and stuff.</p>
+
+  <p><giphy-search></giphy-search></p>
+
+  <div id="result">
+    <h3>Last Selected Gif</h3>
+    <video id="gif" loop autoplay></video>
+  </div>
+
+  <script>
+    document.querySelector('giphy-search').addEventListener('change', function(e) {
+      document.querySelector('#gif').src = e.detail.images.original.mp4;
+    });
+  </script>
+</body>
+</html>

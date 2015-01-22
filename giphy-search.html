@@ -1,0 +1,186 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../core-icons/core-icons.html">
+
+<!--
+Search the [Giphy](http://giphy.com) search engine for a gif for any occasion.
+Scroll through results and pick your favorite. It's that easy.
+
+##### Example
+
+    <giphy-search on-change="{{doSomething}}"></giphy-search>
+
+@element giphy-search
+@blurb Search for and select a Gif using the Giphy search engine.
+@status alpha
+@homepage http://elements.divshot.io/giphy-search
+-->
+<polymer-element name="giphy-search" attributes="query apikey value">
+
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+        position: relative;
+        width: 200px;
+        min-height: 100px;
+      }
+
+      form {
+        border: 1px dashed #ccc;
+      }
+
+      #q {
+        display: block;
+        text-align: center;
+        width: 180px;
+        margin: 10px;
+        border: 0;
+        border-bottom: 1px solid #ccc;
+        transition: border-bottom 0.2s;
+      }
+
+      #q:focus {
+        border-bottom-width: 3px;
+        outline: none;
+      }
+
+      #picker {
+        background: #222;
+        color: white;
+      }
+
+      #queryshow {
+        text-align: center;
+        font-size: 12px;
+        overflow: hidden;
+        line-height: 24px;
+      }
+
+      #picker span {
+        display: block;
+      }
+
+      #picked {
+        position: relative;
+      }
+
+      #picked core-icon {
+        position: absolute;
+        padding: 5px;
+        top: 0;
+        right: 0;
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+      }
+    </style>
+    <core-ajax id="req" url="http://api.giphy.com/v1/gifs/search?q={{query | urlEscaped}}&api_key={{apikey}}" handleAs="json" response="{{result}}"></core-ajax>
+    <template if="{{!result}}">
+      <form on-submit="{{search}}" fit layout horizontal center>
+        <input id="q" value="{{query}}" placeholder="GIF Search">
+      </form>
+    </template>
+    <template if="{{result && !selectedIndex}}">
+      <div id="results" layout vertical>
+        <nav id="picker" horizontal layout>
+          <span on-tap="{{prev}}"><core-icon icon="chevron-left"></core-icon></span>
+          <span on-tap="{{next}}"><core-icon icon="chevron-right"></core-icon></span>
+          <span id="queryshow" flex>{{query}}</span>
+          <span on-tap="{{clear}}"><core-icon icon="clear"></core-icon></span>
+          <span on-tap="{{accept}}"><core-icon icon="check"></core-icon></span>
+        </nav>
+        <template bind="{{result.data[previewIndex]}}">
+          <img on-tap="{{next}}" src="{{images.fixed_width.url}}" width="{{images.fixed_width.width}}" height="{{images.fixed_width.height}}">
+        </template>
+      </div>
+    </template>
+    <template if="{{result && selectedIndex}}" bind="{{result.data[selectedIndex]}}">
+      <div id="picked">
+        <img src="{{images.fixed_width.url}}" src="{{images.fixed_width.url}}" width="{{images.fixed_width.width}}" height="{{images.fixed_width.height}}">
+        <core-icon on-tap="{{clear}}" icon="clear"></core-icon>
+      </div>
+    </template>
+  </template>
+
+  <script>
+
+    Polymer({
+      /**
+       * Your Giphy API key. Defaults to the public beta key, but you may run
+       * into rate limits and such if you don't change it.
+       *
+       * @attribute apikey
+       * @type string
+       * @default dc6zaTOxFJmzC
+       */
+      apikey: 'dc6zaTOxFJmzC',
+      previewIndex: 0,
+      urlEscaped: function(text) {
+        return encodeURIComponent(text);
+      },
+      /**
+       * Call this with a term to manually trigger a search. Otherwise, called
+       * when the user submits a query from the search form.
+       *
+       * #### Example
+       *
+       *     document.querySelector('giphy-search').search('fail');
+       *
+       * @method search
+       */
+      search: function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (typeof e === 'string') this.query = e;
+        this.async(function() {
+          this.$.req.go();
+          this.previewIndex = 0;
+        });
+      },
+      resultChanged: function() {
+        console.log(this.result);
+      },
+      prev: function() {
+        if (!this.result) return;
+
+        this.previewIndex--;
+        if (this.previewIndex < 0) {
+          this.previewIndex = this.result.data.length - 1;
+        }
+      },
+      next: function() {
+        if (!this.result) return;
+
+        this.previewIndex++;
+        if (this.previewIndex >= this.result.data.length) {
+          this.previewIndex = 0;
+        }
+      },
+      clear: function() {
+        this.result = null;
+        this.query = null;
+        this.previewIndex = 0;
+        this.selectedIndex = null;
+        this.value = null;
+        this.async(function() {
+          this.shadowRoot.querySelector('#q').focus();
+        });
+      },
+      accept: function() {
+        this.selectedIndex = this.previewIndex;
+        this.value = this.result.data[this.previewIndex].images.original.url;
+        this.fire('change', this.result.data[this.previewIndex]);
+      }
+
+      /**
+       * Triggered when an image is confirmed from the search results. Detail
+       * is the complete Giphy API payload.
+       *
+       * @event change
+       */
+    });
+
+  </script>
+
+</polymer-element>
